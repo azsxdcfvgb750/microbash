@@ -1,7 +1,0 @@
-/home/testuser/Desktop/SETI/LAB3/microbash/microbash-students $ cd > /dev/null
-/home/testuser/Desktop/SETI/LAB3/microbash/microbash-students $ cd < /dev/zero
-/home/testuser/Desktop/SETI/LAB3/microbash/microbash-students $ cd >/dev/null
-/home/testuser/Desktop/SETI/LAB3/microbash/microbash-students $ cd </dev/zero
-/home/testuser/Desktop/SETI/LAB3/microbash/microbash-students $ cd ~
-/home/testuser/Desktop/SETI/LAB3/microbash/microbash-students $ cd qwerty
-/home/testuser/Desktop/SETI/LAB3/microbash/microbash-students $ cd microbash.c

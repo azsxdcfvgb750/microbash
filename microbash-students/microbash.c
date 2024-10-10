@@ -426,12 +426,6 @@ void run_child(const command_t * const c, int c_stdin, int c_stdout)
 	 * (printing error messages in case of failure, obviously)
 	 */
 	/*** TO BE DONE START ***/
-	//if there is no command to be run we can pipe the previous and next command and end the function
-	if((c == 0 || c->n_args == 0) && c_stdin != -1 && c_stdout != -1)
-	{
-		redirect(c_stdin,c_stdout);
-		return;
-	}
 	//creating child process 
 	int pid = fork();
 	if(pid == -1)
@@ -488,7 +482,7 @@ void change_current_directory(char *newdir)
 			fprintf(stderr,"error the given path is not a directory: ENOTDIR\n");
 			break;
 		default:
-			fatal("unrecognized error");
+			fatal_errno("unrecognized error");
 		}
 	}
 	/*** TO BE DONE END ***/
