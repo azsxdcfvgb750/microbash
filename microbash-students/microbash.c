@@ -208,7 +208,68 @@ check_t check_redirections(const line_t * const l)
 	 * message and return CHECK_FAILED otherwise
 	 */
 	/*** TO BE DONE START ***/
-	
+	//grab last and first command 
+	for(size_t i = 1;i < l->n_commands-1;++i)
+	{
+		command_t* ref_comm = l->commands[i];
+		if(ref_comm == NULL)
+		{
+			//invalid command found
+			fatal("one command was a null reference");
+		}
+		
+		for(size_t j = 0;j < ref_comm->n_args;++j)
+		{
+			if(strchr(ref_comm->args[j],'>') != NULL || strchr(ref_comm->args[j],'>') != NULL)
+			{
+				return CHECK_FAILED;
+			}
+		}
+	}
+	command_t* first = l->commands[0];
+	int first_count = 0;
+	for(size_t j = 0;j < first->n_args;++j)
+	{
+		if(strchr(first->args[j],'>') != NULL)
+		{
+			return CHECK_FAILED;
+		}
+
+		//counting total redirects
+		char* redir = NULL;
+		while(redir = strchr(first->args[j],'>'))
+		{
+			last_count++;
+			if(redir[1] == ' ')
+			{
+				return CHECK_FAILED;
+			}
+		}
+	}
+
+	command_t* last = l->commands[l->n_commands-1];
+	int last_count = 0;
+	for(size_t j = 0;j < last->n_args;++j)
+	{
+		if(strchr(last->args[j],'<') != NULL)
+		{
+			return CHECK_FAILED;
+		}
+		//counting total redirects
+		char* redir = NULL;
+		while(redir = strchr(last->args[j],'>'))
+		{
+			last_count++;
+			if(redir[1] == ' ')
+			{
+				return CHECK_FAILED;
+			}
+		}
+	}
+	if(last_count > 1 || first_count > 1)
+	{
+		return CHECK_FAILED;
+	}
 	/*** TO BE DONE END ***/
 	return CHECK_OK;
 }
