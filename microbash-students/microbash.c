@@ -224,29 +224,35 @@ check_t check_cd(const line_t * const l)
 	 * message and return CHECK_FAILED otherwise
 	 */
 	/*** TO BE DONE START ***/
-	if(l->n_commands != 1)
+	//look for cds
+	for(size_t i = 0;i < l->n_commands;++i)
 	{
-		//look for cds
-		for(size_t i = 0;i < l->n_commands;++i)
+		command_t* ref_comm = l->commands[i];
+		if(ref_comm == NULL)
 		{
-			command_t* ref_comm = l->commands[i];
-			if(ref_comm == NULL)
-			{
-				//empty command
-				continue;
-			}
-			if(ref_comm->args == 0)
-			{
-				
-			}
-			if()
-			{
-
-			}	
+			//invali command found
+			fatal("one command was a null reference");
 		}
+		//if this is true then the string isnt empty
+		if(strcmp(ref_comm->args[0],CD) == 0)
+		{
+			if(l->n_commands > 1)
+			{
+				return CHECK_FAILED;
+			}
+			//must check that the redirects first and then cd
+			char* last = ref_comm->args[ref_comm->n_args - 1];
+			size_t size = strlen(last);
+			for(size_t j = 0;j < size;++i)
+			{
+				if(last[j] == '>' || last[j] == '<')
+				{
+					return CHECK_FAILED;
+				}
+			}
+		}	
+	
 	}
-	char* strtokr_save;
-	char* strto_ret = strtok_r(,&strtok_save);
 	/*** TO BE DONE END ***/
 	return CHECK_OK;
 }
@@ -272,22 +278,25 @@ void redirect(int from_fd, int to_fd)
 	//file description in their open file table but 
 
 	//locking the the open file to redirect to by creating a new fd
-	int err_temp = dupe(to_fd);
+	int err_temp = dup(to_fd);
 	if(err_temp == -1)
 	{
-		fail_errno("cannot duplicate new file descriptor to save it");
+		fatal_errno("cannot duplicate new file descriptor to save it");
 	}
 	
 	//changing new file descriptor to old one while there is another file descriptor on this process
 	int dup_err = dup2(from_fd,to_fd);
 	if(dup_err == -1)
 	{
-		fail_errno("cannot change file descriptor from %d to %d",from_fd,to_fd);
+		fatal_errno("cannot change file descriptor while redirecting");
 	}
 
 	int close_err = close(from_fd);
+	if(close_err == -1)
+	{
+		fatal_errno("cannot close file old descriptor");
+	}
 
-	if()
 	/*** TO BE DONE END ***/
 }
 
@@ -311,7 +320,7 @@ void change_current_directory(char *newdir)
 	 */
 	/*** TO BE DONE START ***/
 	
-	ret = chdir(newdir);
+	int ret = chdir(newdir);
 	if(ret != 0 && ret != ENAMETOOLONG)
 	{
 		fprintf(stderr,"error while doing cd into : %s",newdir);
@@ -334,7 +343,7 @@ void change_current_directory(char *newdir)
 		fatal("not enough memeory to change working directory");
 		break;
 	default:
-		fail("unrecognized error");
+		fatal("unrecognized error");
 	}
 	/*** TO BE DONE END ***/
 }
