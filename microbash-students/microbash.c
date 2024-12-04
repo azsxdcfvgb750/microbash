@@ -224,7 +224,7 @@ check_t check_redirections(const line_t * const l)
 		}
 		if(!ref_comm->in_pathname)
 		{
-			fprintf(stderr,"cannot redirect anything but the first or last command")
+			fprintf(stderr,"cannot redirect input of anything but the first command");
 			return CHECK_FAILED;
 		}	
 	}
@@ -238,7 +238,7 @@ check_t check_redirections(const line_t * const l)
 		}
 		if(!ref_comm->out_pathname)
 		{
-			fprintf(stderr,"cannot redirect anything but the first or last command")
+			fprintf(stderr,"cannot redirect output of anything but the last command");
 			return CHECK_FAILED;
 		}	
 	}
@@ -268,7 +268,7 @@ check_t check_cd(const line_t * const l)
 			fatal("one command was a null reference");
 		}
 		//check wheter the command is cd
-		if(strcmp(ref_comm->args[0],CD) == 0 && ref->n_args > 0)
+		if(strcmp(ref_comm->args[0],CD) == 0 && ref_comm->n_args > 0)
 		{
 			if(l->n_commands > 1)
 			{
@@ -277,7 +277,7 @@ check_t check_cd(const line_t * const l)
 			}
 			if(!ref_comm->in_pathname || !ref_comm->out_pathname)
 			{
-				fprintf("error cd cannot have redirections");
+				fprintf(stderr,"error cd cannot have redirections");
 				return CHECK_FAILED;
 			}
 		}	
@@ -311,7 +311,7 @@ void redirect(int from_fd, int to_fd)
 	{
 		//locking the the open file to redirect to by creating a new fd
 		int tempfd = dup(to_fd);
-		if(err_temp == -1 && errno != EBADF)
+		if(tempfd == -1 && errno != EBADF)
 		{
 			fatal_errno("cannot duplicate new file descriptor to save it");
 		}
@@ -324,7 +324,7 @@ void redirect(int from_fd, int to_fd)
 		}
 		
 
-		if(err_temp != -1)
+		if(tempfd != -1)
 		{
 			int close_err = close(tempfd);
 			if(close_err == -1)
@@ -353,6 +353,31 @@ void run_child(const command_t * const c, int c_stdin, int c_stdout)
 	 * (printing error messages in case of failure, obviously)
 	 */
 	/*** TO BE DONE START ***/
+	//creating child process 
+	int pid = fork();
+	if(pid == -1)
+	{
+		fatal_errno("could not create child process");
+	}else if(!pid)
+	{
+		//child process
+		//redirections need to be done here to prevent altering file descriptors of the main process
+		if(c_stdin != -1)
+		{
+			redirect(c_stdin,0);
+		}
+		if(c_stdout != -1)
+		{
+			redirect(c_stdout,1);
+		}
+		//on error this function can return
+		execve(c->args[0],c->args,NULL);
+		fatal_errno("error allocating new program to command process,reached unreacheable code");
+	}
+	//parent process
+	//need to close file descriptors owned by the father since the child copied them
+	close_if_needed(c_stdout);
+	close_if_needed(c_stdin);
 	/*** TO BE DONE END ***/
 }
 
@@ -366,7 +391,7 @@ void change_current_directory(char *newdir)
 	int ret = chdir(newdir);
 	if(ret != 0 && ret != ENAMETOOLONG)
 	{
-		fprintf(stderr,"error while doing cd into : %s",newdir);
+		fprintf(stderr,"error name to long to cd into : %s",newdir);
 	}
 	switch(ret)
 	{
@@ -461,6 +486,12 @@ int main()
 		 * The memory area must be allocated (directly or indirectly) via malloc.
 		 */
 		/*** TO BE DONE START ***/
+		//pwd is freed at the end
+		pwd = getcwd(NULL,0);
+		if(pwd == NULL)
+		{
+			fatal_errno("cannot get current directory");
+		}
 		/*** TO BE DONE END ***/
 		pwd = my_realloc(pwd, strlen(pwd) + prompt_suffix_len + 1);
 		strcat(pwd, prompt_suffix);
