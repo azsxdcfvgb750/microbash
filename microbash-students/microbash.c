@@ -294,6 +294,35 @@ void wait_for_children()
 	 * Similarly, if a child is killed by a signal, then you should print a message specifying its PID, signal number and signal name.
 	 */
 	/*** TO BE DONE START ***/
+	
+	int wstatus;
+	while((ret = wait(&wstatus)) != ECHILD)
+	{
+		if(errno == ECHILD)
+		{
+			break;
+		}
+		//check if the child process exited incorrectly
+		if(WIFEXITED(wstatus) == false)
+		{
+			//check if the child process was terminated by a signal
+			if(WIFSIGNALED(wstatus))
+			{
+				//get the signal
+				int signal_num = WTERMSIG(wstatus); 
+				fprintf("process pid=%d was terminated by signal with number=%d called",ret,signal_num,sys_signame[signal_num]);
+			}
+		}else
+		{
+			//exited so we can get the exit status
+			int exit_val = WIFEXITSTATUS(wstatus);
+			if(!exit_val)
+			{
+				//ret is the pid of the child process since it terminated correctly with exit
+				fprintf("process with pid=%d exited with error code %d",ret,exit_val);
+			}
+		}
+	}
 	/*** TO BE DONE END ***/
 }
 
@@ -375,9 +404,6 @@ void run_child(const command_t * const c, int c_stdin, int c_stdout)
 		fatal_errno("error allocating new program to command process,reached unreacheable code");
 	}
 	//parent process
-	//need to close file descriptors owned by the father since the child copied them
-	close_if_needed(c_stdout);
-	close_if_needed(c_stdin);
 	/*** TO BE DONE END ***/
 }
 
