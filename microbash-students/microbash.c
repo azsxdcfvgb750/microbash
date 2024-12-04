@@ -161,6 +161,12 @@ command_t *parse_cmd(char * const cmdstr)
 			if (*tmp=='$') {
 				/* Make tmp point to the value of the corresponding environment variable, if any, or the empty string otherwise */
 				/*** TO BE DONE START ***/
+				//c string always has terminator
+				char* var_name = &tmp[1];
+				if((tmp = secure_getenv(tmp)) == NULL)
+				{
+					tmp = var_name;
+				}
 				/*** TO BE DONE END ***/
 			}
 			result->args[result->n_args++] = my_strdup(tmp);
@@ -208,8 +214,7 @@ check_t check_redirections(const line_t * const l)
 	 * message and return CHECK_FAILED otherwise
 	 */
 	/*** TO BE DONE START ***/
-	//grab last and first command 
-	for(size_t i = 1;i < l->n_commands-1;++i)
+	for(size_t i = 1;i < l->n_commands;++i)
 	{
 		command_t* ref_comm = l->commands[i];
 		if(ref_comm == NULL)
@@ -217,59 +222,27 @@ check_t check_redirections(const line_t * const l)
 			//invalid command found
 			fatal("one command was a null reference");
 		}
-		
-		for(size_t j = 0;j < ref_comm->n_args;++j)
+		if(!ref_comm->in_pathname)
 		{
-			if(strchr(ref_comm->args[j],'>') != NULL || strchr(ref_comm->args[j],'>') != NULL)
-			{
-				return CHECK_FAILED;
-			}
-		}
-	}
-	command_t* first = l->commands[0];
-	int first_count = 0;
-	for(size_t j = 0;j < first->n_args;++j)
-	{
-		if(strchr(first->args[j],'>') != NULL)
-		{
+			fprintf(stderr,"cannot redirect anything but the first or last command")
 			return CHECK_FAILED;
-		}
-
-		//counting total redirects
-		char* redir = NULL;
-		while(redir = strchr(first->args[j],'>'))
+		}	
+	}
+	for(size_t i = 0;i < l->n_commands -1;++i)
+	{
+		command_t* ref_comm = l->commands[i];
+		if(ref_comm == NULL)
 		{
-			last_count++;
-			if(redir[1] == ' ')
-			{
-				return CHECK_FAILED;
-			}
+			//invalid command found
+			fatal("one command was a null reference");
 		}
+		if(!ref_comm->out_pathname)
+		{
+			fprintf(stderr,"cannot redirect anything but the first or last command")
+			return CHECK_FAILED;
+		}	
 	}
 
-	command_t* last = l->commands[l->n_commands-1];
-	int last_count = 0;
-	for(size_t j = 0;j < last->n_args;++j)
-	{
-		if(strchr(last->args[j],'<') != NULL)
-		{
-			return CHECK_FAILED;
-		}
-		//counting total redirects
-		char* redir = NULL;
-		while(redir = strchr(last->args[j],'>'))
-		{
-			last_count++;
-			if(redir[1] == ' ')
-			{
-				return CHECK_FAILED;
-			}
-		}
-	}
-	if(last_count > 1 || first_count > 1)
-	{
-		return CHECK_FAILED;
-	}
 	/*** TO BE DONE END ***/
 	return CHECK_OK;
 }
@@ -291,25 +264,21 @@ check_t check_cd(const line_t * const l)
 		command_t* ref_comm = l->commands[i];
 		if(ref_comm == NULL)
 		{
-			//invali command found
+			//invalid command found
 			fatal("one command was a null reference");
 		}
-		//if this is true then the string isnt empty
-		if(strcmp(ref_comm->args[0],CD) == 0)
+		//check wheter the command is cd
+		if(strcmp(ref_comm->args[0],CD) == 0 && ref->n_args > 0)
 		{
 			if(l->n_commands > 1)
 			{
+				fprintf(stderr,"error cd can be the only one command in the line");
 				return CHECK_FAILED;
 			}
-			//must check that the redirects first and then cd
-			char* last = ref_comm->args[ref_comm->n_args - 1];
-			size_t size = strlen(last);
-			for(size_t j = 0;j < size;++i)
+			if(!ref_comm->in_pathname || !ref_comm->out_pathname)
 			{
-				if(last[j] == '>' || last[j] == '<')
-				{
-					return CHECK_FAILED;
-				}
+				fprintf("error cd cannot have redirections");
+				return CHECK_FAILED;
 			}
 		}	
 	
@@ -338,24 +307,37 @@ void redirect(int from_fd, int to_fd)
 	//if this is called by a function that creates a child process the child will inherith its file descriptors that will point to the same
 	//file description in their open file table but 
 
-	//locking the the open file to redirect to by creating a new fd
-	int err_temp = dup(to_fd);
-	if(err_temp == -1)
+	if(from_fd != NO_REDIR)
 	{
-		fatal_errno("cannot duplicate new file descriptor to save it");
-	}
+		//locking the the open file to redirect to by creating a new fd
+		int tempfd = dup(to_fd);
+		if(err_temp == -1 && errno != EBADF)
+		{
+			fatal_errno("cannot duplicate new file descriptor to save it");
+		}
 	
-	//changing new file descriptor to old one while there is another file descriptor on this process
-	int dup_err = dup2(from_fd,to_fd);
-	if(dup_err == -1)
-	{
-		fatal_errno("cannot change file descriptor while redirecting");
-	}
+		//changing new file descriptor to old one while there is another file descriptor on this process
+		int dup_err = dup2(from_fd,to_fd);
+		if(dup_err == -1)
+		{
+			fatal_errno("cannot change file descriptor while redirecting");
+		}
+		
 
-	int close_err = close(from_fd);
-	if(close_err == -1)
-	{
-		fatal_errno("cannot close file old descriptor");
+		if(err_temp != -1)
+		{
+			int close_err = close(tempfd);
+			if(close_err == -1)
+			{
+				fatal_errno("error while redirecting new file descriptor to old one");
+			}
+		}
+
+		int from_err = close(from_fd);
+		if(from_err == -1)
+		{
+			fatal_errno("cannot close old file descriptor");
+		}
 	}
 
 	/*** TO BE DONE END ***/
