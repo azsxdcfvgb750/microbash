@@ -1,4 +1,4 @@
-#error Please read the accompanying microbash.pdf before hacking this source code (and removing this line).
+//#error Please read the accompanying microbash.pdf before hacking this source code (and removing this line).
 /*
  * Micro-bash v2.2
  *
@@ -248,7 +248,7 @@ check_t check_redirections(const line_t * const l)
 		}
 		if(!ref_comm->in_pathname)
 		{
-			fprintf(stderr,"cannot redirect input of anything but the first command");
+			fprintf(stderr,"cannot redirect input of anything but the first command\n");
 			return CHECK_FAILED;
 		}	
 	}
@@ -257,12 +257,13 @@ check_t check_redirections(const line_t * const l)
 		command_t* ref_comm = l->commands[i];
 		if(ref_comm == NULL)
 		{
+			continue;
 			//invalid command found
 			fatal("one command was a null reference");
 		}
 		if(!ref_comm->out_pathname)
 		{
-			fprintf(stderr,"cannot redirect output of anything but the last command");
+			fprintf(stderr,"cannot redirect output of anything but the last command\n");
 			return CHECK_FAILED;
 		}	
 	}
@@ -298,13 +299,18 @@ check_t check_cd(const line_t * const l)
 			//check if there are multiple commands
 			if(l->n_commands > 1)
 			{
-				fprintf(stderr,"error cd can be the only one command in the line");
+				fprintf(stderr,"error cd can be the only one command in the line\n");
+				return CHECK_FAILED;
+			}
+			if(ref_comm->n_args == 1)
+			{
+				fprintf(stderr,"error a direcotry needs to be specified for the cd command\n");
 				return CHECK_FAILED;
 			}
 			//check for redirections
-			if(!ref_comm->in_pathname || !ref_comm->out_pathname)
+			if(ref_comm->in_pathname || ref_comm->out_pathname)
 			{
-				fprintf(stderr,"error cd cannot have redirections");
+				fprintf(stderr,"error cd cannot have redirections\n");
 				return CHECK_FAILED;
 			}
 		}	
@@ -323,6 +329,7 @@ void wait_for_children()
 	/*** TO BE DONE START ***/
 	
 	int wstatus;
+	int ret;
 	while((ret = wait(&wstatus)) != ECHILD)
 	{
 		if(errno == ECHILD)
@@ -330,23 +337,26 @@ void wait_for_children()
 			break;
 		}
 		//check if the child process exited incorrectly
-		if(WIFEXITED(wstatus) == false)
+		if(WIFEXITED(wstatus))
 		{
 			//check if the child process was terminated by a signal
 			if(WIFSIGNALED(wstatus))
 			{
 				//get the signal
 				int signal_num = WTERMSIG(wstatus); 
-				fprintf("process pid=%d was terminated by signal with number=%d called",ret,signal_num,sys_signame[signal_num]);
+				fprintf(stderr,"process pid=%d was terminated by signal with number=%d called %s\n",
+						ret,
+						signal_num,
+						sigabbrev_np(signal_num));
 			}
 		}else
 		{
 			//exited so we can get the exit status
-			int exit_val = WIFEXITSTATUS(wstatus);
+			int exit_val = WEXITSTATUS(wstatus);
 			if(!exit_val)
 			{
 				//ret is the pid of the child process since it terminated correctly with exit
-				fprintf("process with pid=%d exited with error code %d",ret,exit_val);
+				fprintf(stderr,"process with pid=%d exited with error code %d\n",ret,exit_val);
 			}
 		}
 	}
@@ -424,17 +434,12 @@ void run_child(const command_t * const c, int c_stdin, int c_stdout)
 	{
 		//child process
 		//redirections need to be done here to prevent altering file descriptors of the main process
-		if(c_stdin != -1)
-		{
-			redirect(c_stdin,0);
-		}
-		if(c_stdout != -1)
-		{
-			redirect(c_stdout,1);
-		}
+		redirect(c_stdin,0);
+		redirect(c_stdout,1);
 		//on error this function can return
 		execve(c->args[0],c->args,NULL);
-		fatal_errno("error allocating new program to command process,reached unreacheable code");
+		fprintf(stderr,"error running command %s",c->args[0]);
+		fatal_errno("=");
 	}
 	//parent process
 	/*** TO BE DONE END ***/
@@ -448,12 +453,15 @@ void change_current_directory(char *newdir)
 	/*** TO BE DONE START ***/
 	
 	int ret = chdir(newdir);
-	if(ret != 0 && ret != ENAMETOOLONG)
-	{
-		fprintf(stderr,"error name to long to cd into : %s",newdir);
-	}
+	if(!ret)return;
 	switch(ret)
 	{
+	case EACCES:
+		fprintf(stderr,"permission denied\n");
+		break;
+	case EFAULT:
+		fprintf(stderr,"the chosen path cannot be accesed\n");
+		break;
 	case EIO:
 		fatal("I/O error while setting directory");
 		break;
@@ -461,12 +469,15 @@ void change_current_directory(char *newdir)
 		fatal("could not resolve path due to loop in simbolyc links");
 		break;
 	case ENAMETOOLONG:
-	     	fprintf(stderr,"path name too long");
+	     	fprintf(stderr,"path name too long\n");
 		break;
 	case ENOENT:
-	     	fprintf(stderr,"path not found");
+	     	fprintf(stderr,"path not found\n");
 		break;
 	case ENOMEM:
+		fatal("not enough memeory to change working directory");
+		break;
+	case ENOTDIR:
 		fatal("not enough memeory to change working directory");
 		break;
 	default:
@@ -499,7 +510,7 @@ void execute_line(const line_t * const l)
 			/* Open c->in_pathname and assign the file-descriptor to curr_stdin
 			 * (handling error cases) */
 			/*** TO BE DONE START ***/
-			curr_stdin = open(in_pathname, O_NOCTTY | O_RDONLY);
+			curr_stdin = open(c->in_pathname, O_RDONLY);
 			if(curr_stdin == -1)
 			{
 				switch(errno)
@@ -507,16 +518,16 @@ void execute_line(const line_t * const l)
 					case EACCES:
 						perror("error redirecting input: ");
 						break;
-					case EINVAL;
+					case EINVAL:
 						perror("error redirecting input: ");
 						break;
-					case EISDIR;
+					case EISDIR:
 						perror("error redirecting input: ");
 						break;
-					case ELOOP;
+					case ELOOP:
 						perror("error redirecting input: ");
 						break;
-					case ENAMETOOLONG;
+					case ENAMETOOLONG:
 						perror("error redirecting input: ");
 						break;
 					case ENOENT:
@@ -537,6 +548,7 @@ void execute_line(const line_t * const l)
 					default:
 						fatal_errno("fatal error while opening output redirection");
 				}
+				fprintf(stderr,"\n");
 				//redirecting to /dev/zero
 				curr_stdin = open("/dev/zero", O_NOCTTY | O_RDONLY | O_NOFOLLOW);
 				if(curr_stdin == -1)
@@ -551,24 +563,28 @@ void execute_line(const line_t * const l)
 			/* Open c->out_pathname and assign the file-descriptor to curr_stdout
 			 * (handling error cases) */
 			/*** TO BE DONE START ***/
-			int curr_stdout = open(in_pathname,O_CREAT | O_NOCTTY | O_WRONLY);
+			mode_t mode = S_IWUSR;
+			curr_stdout = open(c->out_pathname,O_CREAT | O_WRONLY,mode);
 			if(curr_stdout == -1)
 			{
 				switch(errno)
 				{	
+					case EEXIST:
+						curr_stdout = open(c->out_pathname,O_NOCTTY | O_WRONLY);
+						break;
 					case EACCES:
 						perror("error redirecting input: ");
 						break;
-					case EINVAL;
+					case EINVAL:
 						perror("error redirecting input: ");
 						break;
-					case EISDIR;
+					case EISDIR:
 						perror("error redirecting input: ");
 						break;
-					case ELOOP;
+					case ELOOP:
 						perror("error redirecting input: ");
 						break;
-					case ENAMETOOLONG;
+					case ENAMETOOLONG:
 						perror("error redirecting input: ");
 						break;
 					case ENOENT:
@@ -589,11 +605,15 @@ void execute_line(const line_t * const l)
 					default:
 						fatal_errno("fatal error while opening output redirection");
 				}
+				fprintf(stderr,"\nredirecting to null\n");
 				//redirecting to /dev/zero
-				curr_stdin = open("/dev/null", O_NOCTTY | O_RDONLY | O_NOFOLLOW);
-				if(curr_stdin == -1)
+				if(curr_stdout == -1)
 				{
-					fatal_errno("/dev/null could not be opened something is very wrong");
+					curr_stdout = open("/dev/null", O_NOCTTY | O_WRONLY | O_NOFOLLOW);
+					if(curr_stdout == -1)
+					{
+						fatal_errno("/dev/null could not be opened something is very wrong");
+					}
 				}
 			}
 			/*** TO BE DONE END ***/
@@ -601,6 +621,10 @@ void execute_line(const line_t * const l)
 			int fds[2];
 			/* Create a pipe in fds, and set FD_CLOEXEC in both file-descriptor flags */
 			/*** TO BE DONE START ***/
+			if(pipe2(fds,O_CLOEXEC))
+			{
+				fatal_errno("failed to create a pipe");
+			}
 			/*** TO BE DONE END ***/
 			curr_stdout = fds[1];
 			next_stdin = fds[0];
