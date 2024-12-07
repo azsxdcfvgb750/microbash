@@ -499,6 +499,51 @@ void execute_line(const line_t * const l)
 			/* Open c->in_pathname and assign the file-descriptor to curr_stdin
 			 * (handling error cases) */
 			/*** TO BE DONE START ***/
+			curr_stdin = open(in_pathname, O_NOCTTY | O_RDONLY);
+			if(curr_stdin == -1)
+			{
+				switch(errno)
+				{	
+					case EACCES:
+						perror("error redirecting input: ");
+						break;
+					case EINVAL;
+						perror("error redirecting input: ");
+						break;
+					case EISDIR;
+						perror("error redirecting input: ");
+						break;
+					case ELOOP;
+						perror("error redirecting input: ");
+						break;
+					case ENAMETOOLONG;
+						perror("error redirecting input: ");
+						break;
+					case ENOENT:
+						perror("error redirecting input: ");
+						break;
+					case ENOTDIR:
+						perror("error redirecting input: ");
+						break;
+					case EOVERFLOW:
+						perror("error redirecting input: ");
+						break;
+					case EPERM:
+						perror("error redirecting input: ");
+						break;
+					case ETXTBSY:
+						perror("error redirecting input: ");
+						break;
+					default:
+						fatal_errno("fatal error while opening output redirection");
+				}
+				//redirecting to /dev/zero
+				curr_stdin = open("/dev/zero", O_NOCTTY | O_RDONLY | O_NOFOLLOW);
+				if(curr_stdin == -1)
+				{
+					fatal_errno("/dev/zero could not be opened something is very wrong");
+				}
+			}
 			/*** TO BE DONE END ***/
 		}
 		if (c->out_pathname) {
@@ -506,6 +551,51 @@ void execute_line(const line_t * const l)
 			/* Open c->out_pathname and assign the file-descriptor to curr_stdout
 			 * (handling error cases) */
 			/*** TO BE DONE START ***/
+			int curr_stdout = open(in_pathname,O_CREAT | O_NOCTTY | O_WRONLY);
+			if(curr_stdout == -1)
+			{
+				switch(errno)
+				{	
+					case EACCES:
+						perror("error redirecting input: ");
+						break;
+					case EINVAL;
+						perror("error redirecting input: ");
+						break;
+					case EISDIR;
+						perror("error redirecting input: ");
+						break;
+					case ELOOP;
+						perror("error redirecting input: ");
+						break;
+					case ENAMETOOLONG;
+						perror("error redirecting input: ");
+						break;
+					case ENOENT:
+						perror("error redirecting input: ");
+						break;
+					case ENOTDIR:
+						perror("error redirecting input: ");
+						break;
+					case EOVERFLOW:
+						perror("error redirecting input: ");
+						break;
+					case EPERM:
+						perror("error redirecting input: ");
+						break;
+					case ETXTBSY:
+						perror("error redirecting input: ");
+						break;
+					default:
+						fatal_errno("fatal error while opening output redirection");
+				}
+				//redirecting to /dev/zero
+				curr_stdin = open("/dev/null", O_NOCTTY | O_RDONLY | O_NOFOLLOW);
+				if(curr_stdin == -1)
+				{
+					fatal_errno("/dev/null could not be opened something is very wrong");
+				}
+			}
 			/*** TO BE DONE END ***/
 		} else if (a != (l->n_commands - 1)) { /* unless we're processing the last command, we need to connect the current command and the next one with a pipe */
 			int fds[2];
