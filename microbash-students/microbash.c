@@ -91,6 +91,17 @@ void free_command(command_t * const c)
 {
 	assert(c==0 || c->n_args==0 || (c->n_args > 0 && c->args[c->n_args] == 0)); /* sanity-check: if c is not null, then it is either empty (in case of parsing error) or its args are properly NULL-terminated */
 	/*** TO BE DONE START ***/
+	//freeing the parsed command string
+	for(size_t i = 0;i <= c->n_args;++i)
+	{
+		free(c->args[i]);
+	}
+	//freeing the pathnames
+	free(c->out_pathname);
+	free(c->in_pathname);
+	//freeing the argument array and the command
+	free(c->args);
+	free(c);
 	/*** TO BE DONE END ***/
 }
 
@@ -98,6 +109,18 @@ void free_line(line_t * const l)
 {
 	assert(l==0 || l->n_commands>=0); /* sanity-check */
 	/*** TO BE DONE START ***/
+	//freeing all commands in the array
+	for(size_t i = 0;i < l->n_commands;++i)
+	{
+		//getting the command pointer
+		command_t* command = l->commands[i];
+		if(command != NULL)
+		{
+			free_command(command);
+		}
+	}
+	//freeing the array and the line
+	free(l->commands);	free(l);
 	/*** TO BE DONE END ***/
 }
 
@@ -219,6 +242,7 @@ check_t check_redirections(const line_t * const l)
 		command_t* ref_comm = l->commands[i];
 		if(ref_comm == NULL)
 		{
+			continue;
 			//invalid command found
 			fatal("one command was a null reference");
 		}
@@ -264,17 +288,20 @@ check_t check_cd(const line_t * const l)
 		command_t* ref_comm = l->commands[i];
 		if(ref_comm == NULL)
 		{
+			continue;
 			//invalid command found
 			fatal("one command was a null reference");
 		}
 		//check wheter the command is cd
-		if(strcmp(ref_comm->args[0],CD) == 0 && ref_comm->n_args > 0)
+		if(ref_comm->n_args > 0 && strcmp(ref_comm->args[0],CD) == 0)
 		{
+			//check if there are multiple commands
 			if(l->n_commands > 1)
 			{
 				fprintf(stderr,"error cd can be the only one command in the line");
 				return CHECK_FAILED;
 			}
+			//check for redirections
 			if(!ref_comm->in_pathname || !ref_comm->out_pathname)
 			{
 				fprintf(stderr,"error cd cannot have redirections");
@@ -382,6 +409,12 @@ void run_child(const command_t * const c, int c_stdin, int c_stdout)
 	 * (printing error messages in case of failure, obviously)
 	 */
 	/*** TO BE DONE START ***/
+	//if there is no command to be run we can pipe the previous and next command and end the function
+	if((c == 0 || c->n_args == 0) && c_stdin != -1 && c_stdout != -1)
+	{
+		redirect(c_stdin,c_stdout);
+		return;
+	}
 	//creating child process 
 	int pid = fork();
 	if(pid == -1)
