@@ -246,7 +246,7 @@ check_t check_redirections(const line_t * const l)
 			//invalid command found
 			fatal("one command was a null reference");
 		}
-		if(!ref_comm->in_pathname)
+		if(ref_comm->in_pathname)
 		{
 			fprintf(stderr,"cannot redirect input of anything but the first command\n");
 			return CHECK_FAILED;
@@ -261,7 +261,7 @@ check_t check_redirections(const line_t * const l)
 			//invalid command found
 			fatal("one command was a null reference");
 		}
-		if(!ref_comm->out_pathname)
+		if(ref_comm->out_pathname)
 		{
 			fprintf(stderr,"cannot redirect output of anything but the last command\n");
 			return CHECK_FAILED;
@@ -539,13 +539,8 @@ void execute_line(const line_t * const l)
 					default:
 						fatal_errno("fatal error while opening input redirection");
 				}
-				fprintf(stderr,"\nredirecting to zero\n");
-				//redirecting to /dev/zero
-				curr_stdin = open("/dev/zero", O_CLOEXEC | O_NOCTTY | O_RDONLY | O_NOFOLLOW);
-				if(curr_stdin == -1)
-				{
-						fatal_errno("/dev/zero could not be opened something is very wrong");
-				}
+				//does not execute the command line
+				return;
 			}
 			/*** TO BE DONE END ***/
 		}
