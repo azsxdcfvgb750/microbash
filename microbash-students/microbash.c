@@ -341,7 +341,7 @@ void wait_for_children()
 			break;
 		}
 		//check if the child process exited incorrectly
-		if(WIFEXITED(wstatus))
+		if(!WIFEXITED(wstatus))
 		{
 			//check if the child process was terminated by a signal
 			if(WIFSIGNALED(wstatus))
