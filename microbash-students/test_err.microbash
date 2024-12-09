@@ -1,0 +1,15 @@
+cd > /dev/null
+cd < /dev/zero
+cd >/dev/null
+cd </dev/zero
+cd ~
+cd qwerty
+cd microbash.c
+cd test ..
+cd .. | echo error this should not run
+echo hello >test
+echo hello > test
+echo <test
+echo < test
+echo this text should not appear | echo >test
+echo $QWERTYUIOPASDFGHJKLZXCVBNM <==nothing_should_be_here

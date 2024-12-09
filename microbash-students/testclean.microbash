@@ -1,0 +1,5 @@
+
+echo cleaning up test
+rm log.txt
+rm -rf test
+

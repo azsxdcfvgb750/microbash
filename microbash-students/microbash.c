@@ -456,36 +456,37 @@ void change_current_directory(char *newdir)
 	 */
 	/*** TO BE DONE START ***/
 	
-	int ret = chdir(newdir);
-	if(!ret)return;
-	switch(ret)
+	if(chdir(newdir))
 	{
-	case EACCES:
-		fprintf(stderr,"permission denied\n");
-		break;
-	case EFAULT:
-		fprintf(stderr,"the chosen path cannot be accesed\n");
-		break;
-	case EIO:
-		fatal("I/O error while setting directory");
-		break;
-	case ELOOP:
-		fatal("could not resolve path due to loop in simbolyc links");
-		break;
-	case ENAMETOOLONG:
-	     	fprintf(stderr,"path name too long\n");
-		break;
-	case ENOENT:
-	     	fprintf(stderr,"path not found\n");
-		break;
-	case ENOMEM:
-		fatal("not enough memeory to change working directory");
-		break;
-	case ENOTDIR:
-		fatal("not enough memeory to change working directory");
-		break;
-	default:
-		fatal("unrecognized error");
+		switch(errno)
+		{
+		case EACCES:
+			fprintf(stderr,"permission denied\n");
+			break;
+		case EFAULT:
+			fprintf(stderr,"the chosen path cannot be accesed\n");
+			break;
+		case EIO:
+			fatal("I/O error while setting directory");
+			break;
+		case ELOOP:
+			fprintf(stderr,"could not resolve path due to loop in simbolyc links ELOOP");
+			break;
+		case ENAMETOOLONG:
+		     	fprintf(stderr,"path name too long\n");
+			break;
+		case ENOENT:
+		     	fprintf(stderr,"path not found\n");
+			break;
+		case ENOMEM:
+			fatal("not enough memeory to change working directory: ENOMEM");
+			break;
+		case ENOTDIR:
+			fatal("not enough memeory to change working directory: ENOTDIR");
+			break;
+		default:
+			fatal("unrecognized error");
+		}
 	}
 	/*** TO BE DONE END ***/
 }
