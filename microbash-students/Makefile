@@ -3,7 +3,7 @@ CFLAGS=-ggdb -Og -fno-omit-frame-pointer -Wall -pedantic -Werror -std=gnu11 -fsa
 all: microbash
 
 microbash: microbash.o
-	$(CC) $(CFLAGS) -o $@ $^ -lreadline
+	$(CC) $(CFLAGS) -o $@ $^ -lreadline 
 
 clean:
 	rm -f microbash microbash.o

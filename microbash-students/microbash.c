@@ -92,7 +92,7 @@ void free_command(command_t * const c)
 	assert(c==0 || c->n_args==0 || (c->n_args > 0 && c->args[c->n_args] == 0)); /* sanity-check: if c is not null, then it is either empty (in case of parsing error) or its args are properly NULL-terminated */
 	/*** TO BE DONE START ***/
 	//freeing the parsed command string
-	for(size_t i = 0;i <= c->n_args;++i)
+	for(size_t i = 0;i < c->n_args;++i)
 	{
 		free(c->args[i]);
 	}
@@ -185,11 +185,15 @@ command_t *parse_cmd(char * const cmdstr)
 				/* Make tmp point to the value of the corresponding environment variable, if any, or the empty string otherwise */
 				/*** TO BE DONE START ***/
 				//c string always has terminator
-				char* var_name = &tmp[1];
-				if((tmp = secure_getenv(tmp)) == NULL)
+				char* temp = &tmp[1];
+				if((temp = getenv(temp)) == NULL)
 				{
-					tmp = var_name;
+					*tmp = '\0';
+				}else
+				{
+					tmp = temp;
 				}
+			
 				/*** TO BE DONE END ***/
 			}
 			result->args[result->n_args++] = my_strdup(tmp);
@@ -437,7 +441,7 @@ void run_child(const command_t * const c, int c_stdin, int c_stdout)
 		redirect(c_stdin,0);
 		redirect(c_stdout,1);
 		//on error this function can return
-		execve(c->args[0],c->args,NULL);
+		execvpe(c->args[0],c->args,environ);
 		fprintf(stderr,"error running command %s",c->args[0]);
 		fatal_errno("=");
 	}
