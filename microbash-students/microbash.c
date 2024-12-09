@@ -357,10 +357,10 @@ void wait_for_children()
 		{
 			//exited so we can get the exit status
 			int exit_val = WEXITSTATUS(wstatus);
-			if(!exit_val)
+			if(exit_val)
 			{
 				//ret is the pid of the child process since it terminated correctly with exit
-				fprintf(stderr,"process with pid=%d exited with error code %d\n",ret,exit_val);
+				fprintf(stdout,"process with pid=%d exited with error code %d\n",ret,exit_val);
 			}
 		}
 	}

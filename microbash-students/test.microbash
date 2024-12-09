@@ -10,6 +10,7 @@ echo testing redirections
 echo this file only performs successfull operations
 touch first.txt second.txt third.txt
 touch out_test.txt in_test.txt
+chmod +r out_test.txt in_test.txt
 echo first >first.txt
 echo second >second.txt
 echo third >third.txt
