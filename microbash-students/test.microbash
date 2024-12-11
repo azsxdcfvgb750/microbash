@@ -19,6 +19,7 @@ cat <out_test.txt | cat | cat >in_test.txt
 cat <out_test.txt | cat >in_test.txt
 cat >out_test.txt <in_test.txt
 echo $PATH >path.txt
+chmod +r path.txt
 cd ..
 
 

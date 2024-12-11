@@ -9,7 +9,8 @@ cd test ..
 cd .. | echo error this should not run
 echo hello >test
 echo hello > test
-echo <test
+echo <qwerty
 echo < test
-echo this text should not appear | echo >test
-echo $QWERTYUIOPASDFGHJKLZXCVBNM <==nothing_should_be_here
+echo >test
+echo $QWERTYUJIK >path.txt
+echo hello | | echo

@@ -120,7 +120,8 @@ void free_line(line_t * const l)
 		}
 	}
 	//freeing the array and the line
-	free(l->commands);	free(l);
+	free(l->commands);
+	free(l);
 	/*** TO BE DONE END ***/
 }
 
@@ -188,6 +189,7 @@ command_t *parse_cmd(char * const cmdstr)
 				char* temp = &tmp[1];
 				if((temp = getenv(temp)) == NULL)
 				{
+					fprintf(stderr,"failed to get enviroment variable%s\n",&tmp[1]);
 					*tmp = '\0';
 				}else
 				{
@@ -306,9 +308,9 @@ check_t check_cd(const line_t * const l)
 				fprintf(stderr,"error cd can be the only one command in the line\n");
 				return CHECK_FAILED;
 			}
-			if(ref_comm->n_args == 1)
+			if(ref_comm->n_args != 2 )
 			{
-				fprintf(stderr,"error a direcotry needs to be specified for the cd command\n");
+				fprintf(stderr,"error the cd command must have only one argument\n");
 				return CHECK_FAILED;
 			}
 			//check for redirections
@@ -470,7 +472,7 @@ void change_current_directory(char *newdir)
 			fatal("I/O error while setting directory");
 			break;
 		case ELOOP:
-			fprintf(stderr,"could not resolve path due to loop in simbolyc links ELOOP");
+			fprintf(stderr,"could not resolve path due to loop in simbolyc links ELOOP\n");
 			break;
 		case ENAMETOOLONG:
 		     	fprintf(stderr,"path name too long\n");
@@ -482,7 +484,7 @@ void change_current_directory(char *newdir)
 			fatal("not enough memeory to change working directory: ENOMEM");
 			break;
 		case ENOTDIR:
-			fatal("not enough memeory to change working directory: ENOTDIR");
+			fprintf(stderr,"error the given path is not a directory: ENOTDIR\n");
 			break;
 		default:
 			fatal("unrecognized error");
@@ -586,7 +588,6 @@ void execute_line(const line_t * const l)
 					default:
 						fatal_errno("fatal error while opening output redirection");
 				}
-				fprintf(stderr,"\nredirecting to null\n");
 				//redirecting to /dev/zero
 				curr_stdout = open("/dev/null",O_CLOEXEC | O_NOCTTY | O_WRONLY | O_NOFOLLOW);
 				if(curr_stdout == -1)
