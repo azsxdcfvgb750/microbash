@@ -1,4 +1,4 @@
 per testare l'error handling della funzione wait abbiamo lanciato il comando yes sulla microbash e
 abbiamo usato un altro terminale e il comando kill per mandare dei segnale al processo yes , abbiamo testato con
 successo i segnali SIGSEV SIGINT SIGPIPE SIGABRT e SIGTERM.
-per testare tutte le altre funzionaliata' abbiamo uno scritp di testing diviso nei casi di errore e di successo
+per testare tutte le altre funzionaliata' abbiamo uno script di testing diviso nei casi di errore e di successo

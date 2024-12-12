@@ -189,8 +189,9 @@ command_t *parse_cmd(char * const cmdstr)
 				char* temp = &tmp[1];
 				if((temp = getenv(temp)) == NULL)
 				{
-					fprintf(stderr,"failed to get enviroment variable%s\n",&tmp[1]);
-					*tmp = '\0';
+					fprintf(stderr,"failed to get enviroment variable %s\n",&tmp[1]);
+					tmp[0] = ' ';
+					tmp[1] = '\0';
 				}else
 				{
 					tmp = temp;

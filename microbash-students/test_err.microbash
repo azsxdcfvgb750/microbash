@@ -12,5 +12,5 @@ echo hello > test
 echo <qwerty
 echo < test
 echo >test
-echo $QWERTYUJIK >path.txt
+echo $QWERTYUJIK >path2.txt
 echo hello | | echo
